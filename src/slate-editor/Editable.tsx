@@ -124,7 +124,8 @@ export function Editable({
           Editor.insertText(editor, '\n')
           break
 
-        case 'insertFromDrop': {
+        case 'insertFromDrop':
+        case 'insertReplacementText': {
           event.preventDefault()
 
           const text = event.dataTransfer?.getData('text/plain')
