@@ -24,7 +24,7 @@ export function SlateEditor() {
           padding: 8,
           border: '1px solid lightgrey',
           borderRadius: 4,
-          whiteSpace: 'pre',
+          whiteSpace: 'pre-wrap',
         }}
       />
 
