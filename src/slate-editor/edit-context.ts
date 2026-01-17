@@ -62,12 +62,19 @@ export const EditContextEditor = {
 
 export function initEditContext(editor: Editor) {
   const editable = DOMEditor.getEditable(editor)
+  const { editContext } = editor
 
-  const editContext = new EditContext({
-    text: EditContextEditor.string(editor, editor),
-  })
+  function updateEditContextText() {
+    editContext.updateText(
+      0,
+      editContext.text.length,
+      EditContextEditor.string(editor, editor)
+    )
+  }
 
-  editContext.addEventListener('textupdate', (event) => {
+  updateEditContextText()
+
+  function handleTextUpdate(event: TextUpdateEvent) {
     Transforms.insertText(editor, event.text, {
       at: EditContextEditor.toSlateRange(
         editor,
@@ -84,9 +91,11 @@ export function initEditContext(editor: Editor) {
         event.selectionEnd
       )
     )
-  })
+  }
 
   function handleEditorChange() {
+    updateEditContextText()
+
     if (editor.selection) {
       const [start, end] = EditContextEditor.toOffsetRange(
         editor,
@@ -99,9 +108,11 @@ export function initEditContext(editor: Editor) {
 
   editable.editContext = editContext
   editor.changeHandlers.add(handleEditorChange)
+  editContext.addEventListener('textupdate', handleTextUpdate)
 
   return () => {
     editable.editContext = null
     editor.changeHandlers.delete(handleEditorChange)
+    editContext.removeEventListener('textupdate', handleTextUpdate)
   }
 }

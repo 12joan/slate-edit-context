@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { isHotkey } from 'is-hotkey'
 
 export function PlainEditor() {
   const editorElRef = useRef<HTMLDivElement>(null)
@@ -64,7 +65,7 @@ function initEditContext(editorEl: HTMLElement) {
   updateControlBounds()
 
   editorEl.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter') {
+    if (isHotkey('enter', event)) {
       const start = Math.min(
         editContext.selectionStart,
         editContext.selectionEnd

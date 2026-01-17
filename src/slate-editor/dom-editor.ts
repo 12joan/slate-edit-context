@@ -4,6 +4,7 @@ import DOMNode = globalThis.Node
 import DOMElement = globalThis.Element
 import DOMText = globalThis.Text
 import DOMRange = globalThis.Range
+import DOMStaticRange = globalThis.StaticRange
 import DOMSelection = globalThis.Selection
 export { DOMNode, DOMElement, DOMText, DOMRange, DOMSelection }
 
@@ -24,8 +25,19 @@ export const DOMEditor = {
     return editable
   },
 
-  toSlateRange(editor: Editor, domRange: DOMSelection): Range | null {
-    const { anchorNode, anchorOffset, focusNode, focusOffset } = domRange
+  toSlateRange(
+    editor: Editor,
+    domRange: DOMSelection | DOMStaticRange
+  ): Range | null {
+    const { anchorNode, anchorOffset, focusNode, focusOffset } =
+      domRange instanceof window.Selection
+        ? domRange
+        : {
+            anchorNode: domRange.endContainer,
+            anchorOffset: domRange.startOffset,
+            focusNode: domRange.endContainer,
+            focusOffset: domRange.endOffset,
+          }
     if (!anchorNode || !focusNode) return null
 
     const anchorPath = DOMEditor.toSlatePath(editor, anchorNode)
@@ -39,7 +51,7 @@ export const DOMEditor = {
   },
 
   toSlatePath(editor: Editor, node: DOMNode): Path | null {
-    if (!(node instanceof DOMText)) return null
+    if (!(node instanceof window.Text)) return null
 
     const editable = DOMEditor.getEditable(editor)
     if (!editable.contains(node)) return null
@@ -60,8 +72,10 @@ export const DOMEditor = {
       `[data-slate-path="${JSON.stringify(path)}"]`
     )?.firstChild
 
-    if (!domNode || !(domNode instanceof DOMText))
-      throw new Error('Could not get text node for path')
+    if (!domNode || !(domNode instanceof window.Text))
+      throw new Error(
+        `Could not get text node for path: ${JSON.stringify(path)}`
+      )
 
     return domNode
   },

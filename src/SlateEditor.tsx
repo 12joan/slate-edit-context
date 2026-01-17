@@ -1,5 +1,5 @@
 import { useState, type ReactElement } from 'react'
-import { createEditor as createBaseEditor } from 'slate'
+import { createEditor as createBaseEditor, Editor } from 'slate'
 import { withHistory } from 'slate-history'
 import {
   Editable,
@@ -7,22 +7,40 @@ import {
   type RenderLeafProps,
 } from './slate-editor/Editable'
 import { withEditContext } from './slate-editor/with-edit-context'
+import { useEditorChildren } from './slate-editor/hooks'
+import { DebugEditContext } from './DebugEditContext'
+import { Pre } from './Pre'
 
 export function SlateEditor() {
   const [editor] = useState(createEditor)
 
   return (
-    <Editable
-      editor={editor}
-      renderElement={renderElement}
-      renderLeaf={renderLeaf}
-      style={{
-        padding: 8,
-        border: '1px solid lightgrey',
-        borderRadius: 4,
-        whiteSpace: 'pre',
-      }}
-    />
+    <>
+      <Editable
+        editor={editor}
+        renderElement={renderElement}
+        renderLeaf={renderLeaf}
+        style={{
+          padding: 8,
+          border: '1px solid lightgrey',
+          borderRadius: 4,
+          whiteSpace: 'pre',
+        }}
+      />
+
+      <Debug editor={editor} />
+    </>
+  )
+}
+
+function Debug({ editor }: { editor: Editor }) {
+  const slateValue = useEditorChildren(editor)
+
+  return (
+    <>
+      <Pre>{JSON.stringify(slateValue, null, 2)}</Pre>
+      <DebugEditContext editContext={editor.editContext} />
+    </>
   )
 }
 
