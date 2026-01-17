@@ -96,8 +96,8 @@ interface EditContext extends EventTarget {
 
 declare const EditContext: {
   prototype: EditContext
-  new(): EditContext
-  new(options: EditContextOptions): EditContext
+  new (): EditContext
+  new (options: EditContextOptions): EditContext
 }
 
 interface EditContextOptions {
@@ -202,14 +202,35 @@ interface TextFormat {
     | 'dotted'
     | 'dashed'
     | 'wavy'
+    /**
+     * The following are non-spec values used incorrectly by some versions of
+     * Chrome.
+     * @see https://source.chromium.org/chromium/chromium/src/+/2127205aecac4a74ac856f4d9a0a7c8c83d3f1d2:third_party/blink/renderer/core/editing/ime/edit_context.cc;l=163-198
+     */
+    | 'None'
+    | 'Solid'
+    | 'Dotted'
+    | 'Dashed'
+    | 'Squiggle' // Equivalent to 'wavy'
 
   /**
    * The thickness of the underline that needs to be applied to the text range
    * that is being formatted.
    */
-  readonly underlineThickness: 'none' | 'thin' | 'thick'
+  readonly underlineThickness:
+    | 'none'
+    | 'thin'
+    | 'thick'
+    /**
+     * The following are non-spec values used incorrectly by some versions of
+     * Chrome.
+     * @see https://source.chromium.org/chromium/chromium/src/+/2127205aecac4a74ac856f4d9a0a7c8c83d3f1d2:third_party/blink/renderer/core/editing/ime/edit_context.cc;l=163-198
+     */
+    | 'None'
+    | 'Thin'
+    | 'Thick'
 }
 
 declare const TextFormat: {
-  new(): TextFormat
+  new (): TextFormat
 }

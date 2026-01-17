@@ -1,6 +1,50 @@
 import { Editor, Node, Point, Range, Transforms, type Descendant } from 'slate'
 import { DOMEditor } from './dom-editor'
 
+type UnderlineStyle = TextFormat['underlineStyle']
+type UnderlineThickness = TextFormat['underlineThickness']
+
+type SpecUnderlineStyle = Exclude<
+  UnderlineStyle,
+  'None' | 'Solid' | 'Dotted' | 'Dashed' | 'Squiggle'
+>
+
+type SpecUnderlineThickness = Exclude<
+  UnderlineThickness,
+  'None' | 'Thin' | 'Thick'
+>
+
+/**
+ * Required for compatibility with certain Chrome versions that use incorrect
+ * values.
+ */
+const nonSpecToSpecUnderlineStyle: Record<UnderlineStyle, SpecUnderlineStyle> =
+  {
+    none: 'none',
+    solid: 'solid',
+    double: 'double',
+    dotted: 'dotted',
+    dashed: 'dashed',
+    wavy: 'wavy',
+    None: 'none',
+    Solid: 'solid',
+    Dotted: 'dotted',
+    Dashed: 'dashed',
+    Squiggle: 'wavy',
+  }
+
+const nonSpecToSpecUnderlineThickness: Record<
+  UnderlineThickness,
+  SpecUnderlineThickness
+> = {
+  none: 'none',
+  thin: 'thin',
+  thick: 'thick',
+  None: 'none',
+  Thin: 'thin',
+  Thick: 'thick',
+}
+
 export const EditContextEditor = {
   toSlatePoint(editor: Editor, offset: number): Point {
     const start = Editor.start(editor, [])
@@ -58,6 +102,13 @@ export const EditContextEditor = {
       EditContextEditor.toOffset(editor, range.focus),
     ]
   },
+
+  underlineHighlightName(
+    style: UnderlineStyle,
+    thickness: UnderlineThickness
+  ): string {
+    return `underline-style-${nonSpecToSpecUnderlineStyle[style]}-${nonSpecToSpecUnderlineThickness[thickness]}`
+  },
 }
 
 export function initEditContext(editor: Editor) {
@@ -93,6 +144,44 @@ export function initEditContext(editor: Editor) {
     )
   }
 
+  const activeHighlightNames = new Set<string>()
+
+  function handleTextFormatUpdate(event: TextFormatUpdateEvent) {
+    const textFormats = event.getTextFormats()
+
+    clearActiveHighlights()
+
+    const highlightsByName = new Map<string, Highlight>()
+
+    for (const textFormat of textFormats) {
+      const { rangeStart, rangeEnd, underlineStyle, underlineThickness } =
+        textFormat
+
+      const highlightName = EditContextEditor.underlineHighlightName(
+        underlineStyle,
+        underlineThickness
+      )
+      let highlight = highlightsByName.get(highlightName)
+
+      if (!highlight) {
+        highlight = new Highlight()
+        highlightsByName.set(highlightName, highlight)
+        activeHighlightNames.add(highlightName)
+        CSS.highlights.set(highlightName, highlight)
+      }
+
+      const range = EditContextEditor.toSlateRange(editor, rangeStart, rangeEnd)
+      const domRange = DOMEditor.toDOMRange(editor, range)
+      highlight.add(domRange)
+    }
+  }
+
+  function clearActiveHighlights() {
+    for (const highlightName of activeHighlightNames) {
+      CSS.highlights.delete(highlightName)
+    }
+  }
+
   function handleEditorChange() {
     updateEditContextText()
 
@@ -103,16 +192,56 @@ export function initEditContext(editor: Editor) {
       )
 
       editContext.updateSelection(start, end)
+
+      // Defer updating the selection bounds to give React time to update
+      setTimeout(() => {
+        if (!editor.selection) return
+        const selectionDOMRange = DOMEditor.toDOMRange(editor, editor.selection)
+        editContext.updateSelectionBounds(
+          selectionDOMRange.getBoundingClientRect()
+        )
+      })
     }
+  }
+
+  function updateControlBounds() {
+    editContext.updateControlBounds(editable.getBoundingClientRect())
+  }
+
+  const resizeObserver = new ResizeObserver(updateControlBounds)
+  updateControlBounds()
+
+  function updateCharacterBounds(event: CharacterBoundsUpdateEvent) {
+    const range = EditContextEditor.toSlateRange(
+      editor,
+      event.rangeStart,
+      event.rangeEnd
+    )
+
+    const domRange = DOMEditor.toDOMRange(editor, range)
+
+    editContext.updateCharacterBounds(event.rangeStart, [
+      domRange.getBoundingClientRect(),
+    ])
   }
 
   editable.editContext = editContext
   editor.changeHandlers.add(handleEditorChange)
   editContext.addEventListener('textupdate', handleTextUpdate)
+  editContext.addEventListener('textformatupdate', handleTextFormatUpdate)
+  editContext.addEventListener('characterboundsupdate', updateCharacterBounds)
+  resizeObserver.observe(editable)
 
   return () => {
     editable.editContext = null
     editor.changeHandlers.delete(handleEditorChange)
     editContext.removeEventListener('textupdate', handleTextUpdate)
+    editContext.removeEventListener('textformatupdate', handleTextFormatUpdate)
+    editContext.removeEventListener(
+      'characterboundsupdate',
+      updateCharacterBounds
+    )
+    resizeObserver.disconnect()
+    clearActiveHighlights()
   }
 }

@@ -10,6 +10,7 @@ import { withEditContext } from './slate-editor/with-edit-context'
 import { useEditorChildren } from './slate-editor/hooks'
 import { DebugEditContext } from './DebugEditContext'
 import { Pre } from './Pre'
+import './text-format-highlights.css'
 
 export function SlateEditor() {
   const [editor] = useState(createEditor)

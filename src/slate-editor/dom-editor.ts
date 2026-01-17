@@ -79,4 +79,16 @@ export const DOMEditor = {
 
     return domNode
   },
+
+  toDOMRange(editor: Editor, range: Range): DOMRange {
+    const { anchor, focus } = range
+
+    const anchorNode = DOMEditor.toDOMText(editor, anchor.path)
+    const focusNode = DOMEditor.toDOMText(editor, focus.path)
+
+    const domRange = document.createRange()
+    domRange.setStart(anchorNode, anchor.offset)
+    domRange.setEnd(focusNode, focus.offset)
+    return domRange
+  },
 }
