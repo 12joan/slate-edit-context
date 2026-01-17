@@ -103,16 +103,53 @@ export function initEditContext(editor: Editor) {
       )
 
       editContext.updateSelection(start, end)
+
+      // Defer updating the selection bounds to give React time to update
+      setTimeout(() => {
+        if (!editor.selection) return
+        const selectionDOMRange = DOMEditor.toDOMRange(editor, editor.selection)
+        editContext.updateSelectionBounds(
+          selectionDOMRange.getBoundingClientRect()
+        )
+      })
     }
+  }
+
+  function updateControlBounds() {
+    editContext.updateControlBounds(editable.getBoundingClientRect())
+  }
+
+  const resizeObserver = new ResizeObserver(updateControlBounds)
+  updateControlBounds()
+
+  function updateCharacterBounds(event: CharacterBoundsUpdateEvent) {
+    const range = EditContextEditor.toSlateRange(
+      editor,
+      event.rangeStart,
+      event.rangeEnd
+    )
+
+    const domRange = DOMEditor.toDOMRange(editor, range)
+
+    editContext.updateCharacterBounds(event.rangeStart, [
+      domRange.getBoundingClientRect(),
+    ])
   }
 
   editable.editContext = editContext
   editor.changeHandlers.add(handleEditorChange)
   editContext.addEventListener('textupdate', handleTextUpdate)
+  editContext.addEventListener('characterboundsupdate', updateCharacterBounds)
+  resizeObserver.observe(editable)
 
   return () => {
     editable.editContext = null
     editor.changeHandlers.delete(handleEditorChange)
     editContext.removeEventListener('textupdate', handleTextUpdate)
+    editContext.removeEventListener(
+      'characterboundsupdate',
+      updateCharacterBounds
+    )
+    resizeObserver.disconnect()
   }
 }
