@@ -7,4 +7,5 @@ export default defineConfig({
   server: {
     allowedHosts: true,
   },
+  base: '/slate-edit-context/',
 })
