@@ -24,7 +24,7 @@ export function PlainEditor() {
 
 function initEditContext(editorEl: HTMLElement) {
   const editContext = new EditContext({
-    text: 'hello world',
+    text: 'This is a plain text editor built using the Edit Context API, without Slate.',
   })
 
   editorEl.editContext = editContext
@@ -45,24 +45,16 @@ function initEditContext(editorEl: HTMLElement) {
 
     const textNode = getEditorElTextNode()
 
-    document.getSelection()?.setBaseAndExtent(
-      textNode,
-      selectionStart,
-      textNode,
-      selectionEnd
-    )
+    document
+      .getSelection()
+      ?.setBaseAndExtent(textNode, selectionStart, textNode, selectionEnd)
   }
 
-  editContext.addEventListener(
-    'textupdate',
-    event => render(editContext.text, event.selectionStart, event.selectionEnd)
+  editContext.addEventListener('textupdate', (event) =>
+    render(editContext.text, event.selectionStart, event.selectionEnd)
   )
 
-  render(
-    editContext.text,
-    editContext.selectionStart,
-    editContext.selectionEnd
-  )
+  render(editContext.text, editContext.selectionStart, editContext.selectionEnd)
 
   function updateControlBounds() {
     editContext.updateControlBounds(editorEl.getBoundingClientRect())
@@ -71,17 +63,14 @@ function initEditContext(editorEl: HTMLElement) {
   window.addEventListener('resize', updateControlBounds)
   updateControlBounds()
 
-  editorEl.addEventListener('keydown', event => {
+  editorEl.addEventListener('keydown', (event) => {
     if (event.key === 'Enter') {
       const start = Math.min(
         editContext.selectionStart,
         editContext.selectionEnd
       )
 
-      const end = Math.max(
-        editContext.selectionStart,
-        editContext.selectionEnd
-      )
+      const end = Math.max(editContext.selectionStart, editContext.selectionEnd)
 
       editContext.updateText(start, end, '\n')
       updateSelection(start + 1, start + 1)
@@ -116,12 +105,13 @@ function initEditContext(editorEl: HTMLElement) {
       !editorEl.contains(selection.anchorNode) ||
       !selection.focusNode ||
       !editorEl.contains(selection.focusNode)
-    ) return
+    )
+      return
 
     updateSelection(selection.anchorOffset, selection.focusOffset)
   })
 
-  editContext.addEventListener('characterboundsupdate', event => {
+  editContext.addEventListener('characterboundsupdate', (event) => {
     const textNode = getEditorElTextNode()
 
     const range = document.createRange()

@@ -1,3 +1,82 @@
+import { useState, type ReactElement } from 'react'
+import { createEditor as createBaseEditor } from 'slate'
+import { withHistory } from 'slate-history'
+import {
+  Editable,
+  type RenderElementProps,
+  type RenderLeafProps,
+} from './slate-editor/Editable'
+import { withEditContext } from './slate-editor/with-edit-context'
+
 export function SlateEditor() {
-  return 'TODO'
+  const [editor] = useState(createEditor)
+
+  return (
+    <Editable
+      editor={editor}
+      renderElement={renderElement}
+      renderLeaf={renderLeaf}
+      style={{
+        padding: 8,
+        border: '1px solid lightgrey',
+        borderRadius: 4,
+        whiteSpace: 'pre',
+      }}
+    />
+  )
+}
+
+function createEditor() {
+  const editor = withEditContext(withHistory(createBaseEditor()))
+
+  editor.children = [
+    {
+      type: 'heading',
+      children: [{ text: 'Hello, world!' }],
+    },
+    {
+      type: 'paragraph',
+      children: [
+        { text: 'This editor is based on the ' },
+        { text: 'Edit Context', bold: true },
+        { text: ' API.' },
+      ],
+    },
+  ]
+
+  return editor
+}
+
+function renderElement(props: RenderElementProps): ReactElement {
+  switch (props.element.type) {
+    case 'paragraph':
+      return <Paragraph {...props} />
+
+    case 'heading':
+      return <Heading {...props} />
+  }
+}
+
+function renderLeaf({ leaf: { bold }, attributes, children }: RenderLeafProps) {
+  return (
+    <span {...attributes} style={{ fontWeight: bold ? 'bold' : 'normal' }}>
+      {children}
+    </span>
+  )
+}
+
+function Paragraph({ attributes, children }: RenderElementProps) {
+  return (
+    <p {...attributes} style={{ margin: '0 0 8px 0' }}>
+      {children}
+    </p>
+  )
+}
+
+function Heading({ attributes, children }: RenderElementProps) {
+  return (
+    <h1 {...attributes} style={{ margin: '0 0 8px 0' }}>
+      {children}
+    </h1>
+  )
 }

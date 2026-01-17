@@ -1,0 +1,13 @@
+import { BaseEditor, BaseElement, BaseText } from 'slate'
+import { HistoryEditor } from 'slate-history'
+
+declare module 'slate' {
+  interface CustomTypes {
+    Editor: BaseEditor & HistoryEditor & {
+      changeHandlers: Set<() => void>
+    }
+
+    Element: BaseElement & { type: 'paragraph' | 'heading' }
+    Text: BaseText & { bold?: true }
+  }
+}
